@@ -57,24 +57,30 @@
             <!-- Add Record Form -->
             <form id="expenseForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4 space-y-4">
                 
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Type</label>
-                        <select id="recordType" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-sm font-semibold">
-                            <option value="expense" selected>Expense (-)</option>
-                            <option value="income">Income (+)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Date</label>
-                        <input type="date" id="expenseDate" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
-                    </div>
+                <!-- Toggle Buttons for Type -->
+                <div class="flex p-1 bg-gray-100 rounded-xl mb-2">
+                    <button type="button" id="btnExpense" class="flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-sm text-red-500 transition-all">Expense (-)</button>
+                    <button type="button" id="btnIncome" class="flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all">Income (+)</button>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Date</label>
+                        <input type="date" id="expenseDate" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+                    </div>
+                    <div>
                         <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Amount (Rp)</label>
                         <input type="number" id="amount" required min="1" placeholder="Ex: 50000" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Category</label>
+                        <select id="category" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-sm">
+                            <!-- Options akan diisi oleh JavaScript -->
+                            <option value="" disabled selected>Select...</option>
+                        </select>
                     </div>
                     <div>
                         <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Account/Bank</label>
@@ -90,34 +96,10 @@
                         </select>
                     </div>
                 </div>
-                
-                <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Category</label>
-                    <select id="category" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white text-sm">
-                        <option value="" disabled selected>Select...</option>
-                        <optgroup label="Income Categories">
-                            <option value="Salary">Salary</option>
-                            <option value="Bonus">Bonus</option>
-                            <option value="Allowance">Allowance</option>
-                            <option value="Other Income">Other Income</option>
-                        </optgroup>
-                        <optgroup label="Expense Categories">
-                            <option value="Lunch">Lunch</option>
-                            <option value="Dinner">Dinner</option>
-                            <option value="Snacks">Snacks</option>
-                            <option value="Sports">Sports</option>
-                            <option value="Savings">Savings</option>
-                            <option value="Investment">Investment</option>
-                            <option value="Medical">Medical</option>
-                            <option value="Transportation">Transportation</option>
-                            <option value="Other Expense">Other Expense</option>
-                        </optgroup>
-                    </select>
-                </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Note</label>
-                    <input type="text" id="note" required placeholder="Example: Salary Oct / Nasi Goreng" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
+                    <input type="text" id="note" required placeholder="Example: Lunch / Salary" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-sm">
                 </div>
 
                 <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm mt-2">
@@ -136,7 +118,6 @@
                 </button>
             </div>
         </div>
-
 
         <!-- ==================== HISTORY VIEW ==================== -->
         <div id="historyView" class="transition-all hidden">
