@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catatan Pengeluaran</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans antialiased min-h-screen flex justify-center items-start pt-10 px-4">
+
+    <!-- HALAMAN MASUK (WALLET ID) -->
+    <div id="loginScreen" class="w-full max-w-md bg-white rounded-2xl shadow-sm border border-gray-100 p-8 text-center transition-all">
+        <div class="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+            <i class="fas fa-wallet"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">Buka Dompet</h2>
+        <p class="text-gray-500 mb-6 text-sm">Masukkan kode unik (Wallet ID) untuk membuka atau membuat catatan pengeluaran baru.</p>
+        
+        <form id="loginForm" class="space-y-4">
+            <input type="text" id="walletIdInput" required placeholder="Contoh: dompet-keluarga" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all text-center font-medium">
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm">
+                Buka Catatan
+            </button>
+        </form>
+    </div>
+
+    <!-- HALAMAN UTAMA APLIKASI -->
+    <div id="appScreen" class="w-full max-w-md hidden">
+        <!-- Header -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4 relative">
+            <button id="logoutBtn" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-sm flex items-center gap-1 transition-colors">
+                <i class="fas fa-sign-out-alt"></i> Keluar
+            </button>
+            <p class="text-gray-500 text-sm font-medium mb-1">Total Pengeluaran</p>
+            <h1 id="totalAmount" class="text-3xl font-bold text-gray-800">Rp 0</h1>
+            <p class="text-xs text-gray-400 mt-2">Wallet ID: <span id="displayWalletId" class="font-semibold text-gray-600"></span></p>
+        </div>
+
+        <!-- Form Tambah -->
+        <form id="expenseForm" class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-4 space-y-4">
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Nominal (Rp)</label>
+                <input type="number" id="amount" required min="1" placeholder="Contoh: 50000" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+            </div>
+            
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Kategori</label>
+                <select id="category" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all bg-white">
+                    <option value="" disabled selected>Pilih kategori...</option>
+                    <option value="Makanan">🍔 Makanan & Minuman</option>
+                    <option value="Transportasi">🚗 Transportasi</option>
+                    <option value="Belanja">🛍️ Belanja</option>
+                    <option value="Hiburan">🎬 Hiburan</option>
+                    <option value="Tagihan">📄 Tagihan</option>
+                    <option value="Lainnya">📦 Lainnya</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wider">Keterangan</label>
+                <input type="text" id="note" required placeholder="Contoh: Makan siang" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all">
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-colors shadow-sm flex justify-center items-center gap-2">
+                <i class="fas fa-plus"></i> Tambah Pengeluaran
+            </button>
+        </form>
+
+        <!-- Daftar Riwayat -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+            <h3 class="text-sm font-bold text-gray-800 mb-4">Riwayat Pengeluaran</h3>
+            <div id="expenseList" class="space-y-3">
+                <p class="text-center text-gray-400 text-sm py-4">Belum ada catatan.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Menghubungkan file JavaScript (HARUS type="module" karena pakai Firebase CDN) -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
