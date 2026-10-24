@@ -15,8 +15,8 @@ const db = getFirestore(app);
 
 let currentWalletId = "";
 let unsubscribe = null;
-let currentView = 'main'; // 'main' or 'history'
-let historyMode = 'month'; // 'month' or 'all'
+let currentView = 'main'; 
+let historyMode = 'month'; 
 
 // UI Elements - General
 const loginScreen = document.getElementById('loginScreen');
@@ -29,6 +29,9 @@ const mainView = document.getElementById('mainView');
 const displayWalletId = document.getElementById('displayWalletId');
 const logoutBtn = document.getElementById('logoutBtn');
 const totalAmountEl = document.getElementById('totalAmount');
+const totalIncomeEl = document.getElementById('totalIncome');
+const totalExpenseEl = document.getElementById('totalExpense');
+
 const expenseForm = document.getElementById('expenseForm');
 const submitBtn = document.getElementById('submitBtn');
 const recentExpenseList = document.getElementById('recentExpenseList');
@@ -41,6 +44,8 @@ const historyMonthFilter = document.getElementById('historyMonthFilter');
 const showAllTimeBtn = document.getElementById('showAllTimeBtn');
 const historyTotalLabel = document.getElementById('historyTotalLabel');
 const historyTotalAmount = document.getElementById('historyTotalAmount');
+const historyTotalIncomeEl = document.getElementById('historyTotalIncome');
+const historyTotalExpenseEl = document.getElementById('historyTotalExpense');
 const fullExpenseList = document.getElementById('fullExpenseList');
 const expenseDateInput = document.getElementById('expenseDate');
 
@@ -52,7 +57,7 @@ historyMonthFilter.value = currentMonthStr;
 
 // Formatters
 const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Math.abs(amount));
 };
 
 const formatDateUI = (dateString) => {
@@ -60,9 +65,17 @@ const formatDateUI = (dateString) => {
     return dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); 
 };
 
-// HTML Template for Expense Items
+// HTML Template for List Items
 const createExpenseHTML = (data) => {
     const bankDisplay = data.bankType ? data.bankType : 'N/A';
+    
+    // Default to 'expense' for old records that don't have 'type'
+    const recordType = data.type || 'expense';
+    const isIncome = recordType === 'income';
+    
+    const sign = isIncome ? '+' : '-';
+    const amountColorClass = isIncome ? 'text-green-600' : 'text-red-500';
+
     return `
         <div class="group flex justify-between items-center p-3 hover:bg-gray-50 rounded-xl border border-transparent hover:border-gray-100 transition-colors">
             <div class="flex items-center gap-3 w-full">
@@ -75,7 +88,7 @@ const createExpenseHTML = (data) => {
                     <p class="text-[11px] text-gray-500 font-medium">${data.category} • ${bankDisplay}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold text-red-500">-${formatCurrency(data.amount)}</p>
+                    <p class="text-sm font-bold ${amountColorClass}">${sign} Rp ${formatCurrency(data.amount)}</p>
                     <button class="delete-btn text-[11px] font-semibold text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 mt-1 block w-full text-right" data-id="${data.id}">
                         Delete
                     </button>
@@ -121,7 +134,7 @@ historyMonthFilter.addEventListener('change', () => {
     historyMonthFilter.classList.remove('opacity-50');
     showAllTimeBtn.classList.replace('bg-blue-600', 'bg-blue-50');
     showAllTimeBtn.classList.replace('text-white', 'text-blue-600');
-    historyTotalLabel.textContent = `Total in ${historyMonthFilter.value}`;
+    historyTotalLabel.textContent = `Balance in ${historyMonthFilter.value}`;
     loadData();
 });
 
@@ -130,7 +143,7 @@ showAllTimeBtn.addEventListener('click', () => {
     historyMonthFilter.classList.add('opacity-50');
     showAllTimeBtn.classList.replace('bg-blue-50', 'bg-blue-600');
     showAllTimeBtn.classList.replace('text-blue-600', 'text-white');
-    historyTotalLabel.textContent = "Total All Time";
+    historyTotalLabel.textContent = "Balance All Time";
     loadData();
 });
 
@@ -142,11 +155,10 @@ function switchView(view) {
     } else {
         mainView.classList.add('hidden');
         historyView.classList.remove('hidden');
-        // Reset history filter to current month default when opening
         if (historyMode === 'all') {
-            historyTotalLabel.textContent = "Total All Time";
+            historyTotalLabel.textContent = "Balance All Time";
         } else {
-            historyTotalLabel.textContent = `Total in ${historyMonthFilter.value}`;
+            historyTotalLabel.textContent = `Balance in ${historyMonthFilter.value}`;
         }
     }
     loadData();
@@ -159,15 +171,12 @@ function loadData() {
 
     let q;
     
-    // Determine what to query based on current view and mode
     if (currentView === 'main') {
-        // Main view always shows current month data
         q = query(collection(db, "wallets", currentWalletId, "expenses"), where("month", "==", currentMonthStr));
         recentExpenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">Loading...</p>';
     } else {
-        // History view depends on filter
         if (historyMode === 'all') {
-            q = query(collection(db, "wallets", currentWalletId, "expenses")); // Get everything
+            q = query(collection(db, "wallets", currentWalletId, "expenses"));
         } else {
             q = query(collection(db, "wallets", currentWalletId, "expenses"), where("month", "==", historyMonthFilter.value));
         }
@@ -176,13 +185,24 @@ function loadData() {
 
     unsubscribe = onSnapshot(q, (snapshot) => {
         let expenses = [];
-        let total = 0;
+        let totalIncome = 0;
+        let totalExpense = 0;
 
         snapshot.forEach((docSnap) => {
             const data = docSnap.data();
-            total += Number(data.amount);
+            const recordType = data.type || 'expense'; 
+            
+            if (recordType === 'income') {
+                totalIncome += Number(data.amount);
+            } else {
+                totalExpense += Number(data.amount);
+            }
+
             expenses.push({ id: docSnap.id, ...data });
         });
+
+        // Calculate Net Balance
+        const netBalance = totalIncome - totalExpense;
 
         // Sort: Newest Date first. If same date, newest CreatedAt first.
         expenses.sort((a, b) => {
@@ -190,23 +210,32 @@ function loadData() {
             return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
         });
 
+        // Update UI based on view
         if (currentView === 'main') {
-            totalAmountEl.textContent = formatCurrency(total);
-            recentExpenseList.innerHTML = '';
+            totalAmountEl.textContent = `Rp ${formatCurrency(netBalance)}`;
+            totalIncomeEl.textContent = `Rp ${formatCurrency(totalIncome)}`;
+            totalExpenseEl.textContent = `Rp ${formatCurrency(totalExpense)}`;
             
+            // Adjust balance color (black for positive/0, red for negative)
+            totalAmountEl.className = netBalance < 0 ? 'text-3xl font-bold text-red-500' : 'text-3xl font-bold text-gray-800';
+
+            recentExpenseList.innerHTML = '';
             if(expenses.length === 0) {
                 recentExpenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No records for this month.</p>';
             } else {
-                // ONLY SHOW TOP 3 ON MAIN PAGE
                 const top3 = expenses.slice(0, 3);
                 top3.forEach((data) => {
                     recentExpenseList.innerHTML += createExpenseHTML(data);
                 });
             }
         } else {
-            historyTotalAmount.textContent = formatCurrency(total);
-            fullExpenseList.innerHTML = '';
+            historyTotalAmount.textContent = `Rp ${formatCurrency(netBalance)}`;
+            historyTotalIncomeEl.textContent = `Rp ${formatCurrency(totalIncome)}`;
+            historyTotalExpenseEl.textContent = `Rp ${formatCurrency(totalExpense)}`;
             
+            historyTotalAmount.className = netBalance < 0 ? 'text-2xl font-bold text-red-500' : 'text-2xl font-bold text-gray-800';
+
+            fullExpenseList.innerHTML = '';
             if(expenses.length === 0) {
                 fullExpenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No records found.</p>';
             } else {
@@ -216,7 +245,7 @@ function loadData() {
             }
         }
 
-        // Attach delete listeners for dynamically created buttons
+        // Attach delete listeners
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
@@ -228,10 +257,11 @@ function loadData() {
     });
 }
 
-// Add New Expense
+// Add New Record (Income or Expense)
 expenseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
+    const recordType = document.getElementById('recordType').value;
     const selectedDate = document.getElementById('expenseDate').value;
     const amount = document.getElementById('amount').value;
     const category = document.getElementById('category').value;
@@ -244,6 +274,7 @@ expenseForm.addEventListener('submit', async (e) => {
 
     try {
         await addDoc(collection(db, "wallets", currentWalletId, "expenses"), {
+            type: recordType,     // 'income' or 'expense'
             date: selectedDate,
             month: monthStr,
             amount: Number(amount),
@@ -262,7 +293,7 @@ expenseForm.addEventListener('submit', async (e) => {
         console.error(error);
         alert("Failed to save data.");
     } finally {
-        submitBtn.innerHTML = 'Add Expense';
+        submitBtn.innerHTML = 'Add Record';
         submitBtn.disabled = false;
     }
 });
