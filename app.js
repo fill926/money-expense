@@ -17,7 +17,7 @@ let currentWalletId = "";
 let unsubscribe = null;
 let currentView = 'main'; 
 let historyMode = 'month'; 
-let activeRecordType = 'expense'; // Default active type
+let activeRecordType = 'expense';
 
 // UI Elements - General
 const loginScreen = document.getElementById('loginScreen');
@@ -129,7 +129,7 @@ const createExpenseHTML = (data) => {
                     <p class="text-[11px] text-gray-500 font-medium">${data.category} • ${bankDisplay}</p>
                 </div>
                 <div class="text-right">
-                    <p class="text-sm font-bold ${amountColorClass}">${sign} Rp ${formatCurrency(data.amount)}</p>
+                    <p class="text-sm font-bold ${amountColorClass}">${sign} ${formatCurrency(data.amount)}</p>
                     <button class="delete-btn text-[11px] font-semibold text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 mt-1 block w-full text-right" data-id="${data.id}">
                         Delete
                     </button>
@@ -250,9 +250,9 @@ function loadData() {
         });
 
         if (currentView === 'main') {
-            totalAmountEl.textContent = `Rp ${formatCurrency(netBalance)}`;
-            totalIncomeEl.textContent = `Rp ${formatCurrency(totalIncome)}`;
-            totalExpenseEl.textContent = `Rp ${formatCurrency(totalExpense)}`;
+            totalAmountEl.textContent = formatCurrency(netBalance);
+            totalIncomeEl.textContent = formatCurrency(totalIncome);
+            totalExpenseEl.textContent = formatCurrency(totalExpense);
             
             totalAmountEl.className = netBalance < 0 ? 'text-3xl font-bold text-red-500' : 'text-3xl font-bold text-gray-800';
 
@@ -266,9 +266,9 @@ function loadData() {
                 });
             }
         } else {
-            historyTotalAmount.textContent = `Rp ${formatCurrency(netBalance)}`;
-            historyTotalIncomeEl.textContent = `Rp ${formatCurrency(totalIncome)}`;
-            historyTotalExpenseEl.textContent = `Rp ${formatCurrency(totalExpense)}`;
+            historyTotalAmount.textContent = formatCurrency(netBalance);
+            historyTotalIncomeEl.textContent = formatCurrency(totalIncome);
+            historyTotalExpenseEl.textContent = formatCurrency(totalExpense);
             
             historyTotalAmount.className = netBalance < 0 ? 'text-2xl font-bold text-red-500' : 'text-2xl font-bold text-gray-800';
 
@@ -297,7 +297,6 @@ function loadData() {
 expenseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    // Gunakan variabel activeRecordType untuk menentukan tipe (income/expense)
     const selectedDate = document.getElementById('expenseDate').value;
     const amount = document.getElementById('amount').value;
     const category = document.getElementById('category').value;
@@ -310,7 +309,7 @@ expenseForm.addEventListener('submit', async (e) => {
 
     try {
         await addDoc(collection(db, "wallets", currentWalletId, "expenses"), {
-            type: activeRecordType, // Diambil dari tombol yang sedang aktif
+            type: activeRecordType, 
             date: selectedDate,
             month: monthStr,
             amount: Number(amount),
@@ -320,7 +319,6 @@ expenseForm.addEventListener('submit', async (e) => {
             createdAt: serverTimestamp()
         });
         
-        // Bersihkan form setelah sukses
         document.getElementById('amount').value = '';
         document.getElementById('category').value = '';
         document.getElementById('bankType').value = '';
