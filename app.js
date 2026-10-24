@@ -1,8 +1,6 @@
-// Import fungsi Firebase dari CDN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-// Konfigurasi Firebase milikmu
 const firebaseConfig = {
     apiKey: "AIzaSyDEPfwXfGxPBTK3xVxIKNKdfOw7cHzD8_o",
     authDomain: "catatan-pengeluaran-e8807.firebaseapp.com",
@@ -12,15 +10,12 @@ const firebaseConfig = {
     appId: "1:662914862726:web:f5b13503cad0a108804b07"
 };
 
-// Inisialisasi Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Variabel Global
 let currentWalletId = "";
-let unsubscribe = null; // Untuk menghentikan sinkronisasi jika logout
+let unsubscribe = null;
 
-// Elemen UI
 const loginScreen = document.getElementById('loginScreen');
 const appScreen = document.getElementById('appScreen');
 const loginForm = document.getElementById('loginForm');
@@ -32,12 +27,10 @@ const submitBtn = document.getElementById('submitBtn');
 const expenseList = document.getElementById('expenseList');
 const totalAmountEl = document.getElementById('totalAmount');
 
-// Fungsi Format Rupiah
-const formatRupiah = (angka) => {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(angka);
+const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
 };
 
-// Handle Login (Masuk dengan Wallet ID)
 loginForm.addEventListener('submit', (e) => {
     e.preventDefault();
     const id = walletIdInput.value.trim().toLowerCase();
@@ -46,13 +39,12 @@ loginForm.addEventListener('submit', (e) => {
         displayWalletId.textContent = currentWalletId;
         loginScreen.classList.add('hidden');
         appScreen.classList.remove('hidden');
-        loadExpenses(); // Mulai tarik data dari Firebase
+        loadExpenses();
     }
 });
 
-// Handle Logout
 logoutBtn.addEventListener('click', () => {
-    if(unsubscribe) unsubscribe(); // Hentikan listener database
+    if(unsubscribe) unsubscribe();
     currentWalletId = "";
     walletIdInput.value = "";
     appScreen.classList.add('hidden');
@@ -61,19 +53,17 @@ logoutBtn.addEventListener('click', () => {
     totalAmountEl.textContent = 'Rp 0';
 });
 
-// Load Data dari Firestore secara Real-time
 function loadExpenses() {
-    // Kita menyimpan data di dalam koleksi: wallets -> {walletId} -> expenses
     const q = query(collection(db, "wallets", currentWalletId, "expenses"), orderBy("createdAt", "desc"));
     
-    expenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4"><i class="fas fa-spinner fa-spin"></i> Memuat data...</p>';
+    expenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4"><i class="fas fa-spinner fa-spin"></i> Loading data...</p>';
 
     unsubscribe = onSnapshot(q, (snapshot) => {
         expenseList.innerHTML = '';
         let total = 0;
 
         if(snapshot.empty) {
-            expenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">Belum ada catatan.</p>';
+            expenseList.innerHTML = '<p class="text-center text-gray-400 text-sm py-4">No records yet.</p>';
             totalAmountEl.textContent = 'Rp 0';
             return;
         }
@@ -94,9 +84,9 @@ function loadExpenses() {
                         <p class="text-xs text-gray-500">${data.category}</p>
                     </div>
                     <div class="text-right">
-                        <p class="text-sm font-bold text-red-500">-${formatRupiah(data.amount)}</p>
+                        <p class="text-sm font-bold text-red-500">-${formatCurrency(data.amount)}</p>
                         <button class="delete-btn text-xs text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 mt-1" data-id="${docSnap.id}">
-                            <i class="fas fa-trash"></i> Hapus
+                            <i class="fas fa-trash"></i> Delete
                         </button>
                     </div>
                 </div>
@@ -104,24 +94,22 @@ function loadExpenses() {
             expenseList.appendChild(div);
         });
 
-        totalAmountEl.textContent = formatRupiah(total);
+        totalAmountEl.textContent = formatCurrency(total);
 
-        // Tambahkan event listener untuk tombol hapus
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.target.closest('button').getAttribute('data-id');
-                if(confirm('Hapus catatan ini?')) {
+                if(confirm('Delete this record?')) {
                     await deleteDoc(doc(db, "wallets", currentWalletId, "expenses", id));
                 }
             });
         });
     }, (error) => {
-        console.error("Error mengambil data:", error);
-        expenseList.innerHTML = `<p class="text-center text-red-400 text-sm py-4">Gagal mengambil data. Pastikan Firestore Rules dalam mode Test (Allow read/write).</p>`;
+        console.error("Error loading data:", error);
+        expenseList.innerHTML = `<p class="text-center text-red-400 text-sm py-4">Failed to load data. Ensure Firestore Rules are in Test mode.</p>`;
     });
 }
 
-// Tambah Data ke Firestore
 expenseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -129,7 +117,7 @@ expenseForm.addEventListener('submit', async (e) => {
     const category = document.getElementById('category').value;
     const note = document.getElementById('note').value;
     
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
     submitBtn.disabled = true;
 
     try {
@@ -137,28 +125,26 @@ expenseForm.addEventListener('submit', async (e) => {
             amount: Number(amount),
             category: category,
             note: note,
-            createdAt: serverTimestamp() // Waktu dari server Firebase
+            createdAt: serverTimestamp()
         });
         
-        // Reset form setelah sukses
         expenseForm.reset();
     } catch (error) {
-        console.error("Error menambah data:", error);
-        alert("Gagal menyimpan. Pastikan Firestore kamu aktif dan menggunakan Test Mode.");
+        console.error("Error adding data:", error);
+        alert("Failed to save. Make sure your Firestore is active and using Test Mode.");
     } finally {
-        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Tambah Pengeluaran';
+        submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add Expense';
         submitBtn.disabled = false;
     }
 });
 
-// Fungsi bantuan untuk ikon kategori
 function getIcon(category) {
     switch(category) {
-        case 'Makanan': return 'fa-hamburger';
-        case 'Transportasi': return 'fa-car';
-        case 'Belanja': return 'fa-shopping-bag';
-        case 'Hiburan': return 'fa-film';
-        case 'Tagihan': return 'fa-file-invoice-dollar';
+        case 'Food': return 'fa-hamburger';
+        case 'Transportation': return 'fa-car';
+        case 'Shopping': return 'fa-shopping-bag';
+        case 'Entertainment': return 'fa-film';
+        case 'Bills': return 'fa-file-invoice-dollar';
         default: return 'fa-box';
     }
 }
