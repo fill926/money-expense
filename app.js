@@ -17,6 +17,7 @@ let currentWalletId = "";
 let unsubscribe = null;
 let currentView = 'main'; 
 let historyMode = 'month'; 
+let activeRecordType = 'expense'; // Default active type
 
 // UI Elements - General
 const loginScreen = document.getElementById('loginScreen');
@@ -32,8 +33,13 @@ const totalAmountEl = document.getElementById('totalAmount');
 const totalIncomeEl = document.getElementById('totalIncome');
 const totalExpenseEl = document.getElementById('totalExpense');
 
+// Form Elements
 const expenseForm = document.getElementById('expenseForm');
 const submitBtn = document.getElementById('submitBtn');
+const btnExpense = document.getElementById('btnExpense');
+const btnIncome = document.getElementById('btnIncome');
+const categorySelect = document.getElementById('category');
+
 const recentExpenseList = document.getElementById('recentExpenseList');
 const goToHistoryBtn = document.getElementById('goToHistoryBtn');
 
@@ -48,6 +54,10 @@ const historyTotalIncomeEl = document.getElementById('historyTotalIncome');
 const historyTotalExpenseEl = document.getElementById('historyTotalExpense');
 const fullExpenseList = document.getElementById('fullExpenseList');
 const expenseDateInput = document.getElementById('expenseDate');
+
+// Data Kategori
+const expenseCategories = ['Lunch', 'Dinner', 'Snacks', 'Sports', 'Savings', 'Investment', 'Medical', 'Transportation', 'Other Expense'];
+const incomeCategories = ['Salary', 'Bonus', 'Allowance', 'Other Income'];
 
 // Setup Default Dates
 const todayStr = new Date().toISOString().split('T')[0];
@@ -65,11 +75,42 @@ const formatDateUI = (dateString) => {
     return dateObj.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }); 
 };
 
-// HTML Template for List Items
+// ---------------- Toggle Button & Category Logic ---------------- //
+
+function updateCategoryOptions() {
+    categorySelect.innerHTML = '<option value="" disabled selected>Select...</option>';
+    const categories = activeRecordType === 'income' ? incomeCategories : expenseCategories;
+    
+    categories.forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        categorySelect.appendChild(opt);
+    });
+}
+
+function setRecordType(type) {
+    activeRecordType = type;
+    if (type === 'expense') {
+        btnExpense.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-sm text-red-500 transition-all";
+        btnIncome.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all";
+    } else {
+        btnIncome.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg bg-white shadow-sm text-green-600 transition-all";
+        btnExpense.className = "flex-1 py-2.5 text-sm font-semibold rounded-lg text-gray-500 hover:text-gray-700 transition-all";
+    }
+    updateCategoryOptions();
+}
+
+btnExpense.addEventListener('click', () => setRecordType('expense'));
+btnIncome.addEventListener('click', () => setRecordType('income'));
+
+// Initialize categories
+updateCategoryOptions();
+
+// ---------------- HTML Template for List Items ---------------- //
+
 const createExpenseHTML = (data) => {
     const bankDisplay = data.bankType ? data.bankType : 'N/A';
-    
-    // Default to 'expense' for old records that don't have 'type'
     const recordType = data.type || 'expense';
     const isIncome = recordType === 'income';
     
@@ -201,22 +242,18 @@ function loadData() {
             expenses.push({ id: docSnap.id, ...data });
         });
 
-        // Calculate Net Balance
         const netBalance = totalIncome - totalExpense;
 
-        // Sort: Newest Date first. If same date, newest CreatedAt first.
         expenses.sort((a, b) => {
             if (a.date !== b.date) return a.date > b.date ? -1 : 1;
             return (b.createdAt?.toMillis() || 0) - (a.createdAt?.toMillis() || 0);
         });
 
-        // Update UI based on view
         if (currentView === 'main') {
             totalAmountEl.textContent = `Rp ${formatCurrency(netBalance)}`;
             totalIncomeEl.textContent = `Rp ${formatCurrency(totalIncome)}`;
             totalExpenseEl.textContent = `Rp ${formatCurrency(totalExpense)}`;
             
-            // Adjust balance color (black for positive/0, red for negative)
             totalAmountEl.className = netBalance < 0 ? 'text-3xl font-bold text-red-500' : 'text-3xl font-bold text-gray-800';
 
             recentExpenseList.innerHTML = '';
@@ -245,7 +282,6 @@ function loadData() {
             }
         }
 
-        // Attach delete listeners
         document.querySelectorAll('.delete-btn').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 const id = e.currentTarget.getAttribute('data-id');
@@ -261,7 +297,7 @@ function loadData() {
 expenseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const recordType = document.getElementById('recordType').value;
+    // Gunakan variabel activeRecordType untuk menentukan tipe (income/expense)
     const selectedDate = document.getElementById('expenseDate').value;
     const amount = document.getElementById('amount').value;
     const category = document.getElementById('category').value;
@@ -274,7 +310,7 @@ expenseForm.addEventListener('submit', async (e) => {
 
     try {
         await addDoc(collection(db, "wallets", currentWalletId, "expenses"), {
-            type: recordType,     // 'income' or 'expense'
+            type: activeRecordType, // Diambil dari tombol yang sedang aktif
             date: selectedDate,
             month: monthStr,
             amount: Number(amount),
@@ -284,7 +320,7 @@ expenseForm.addEventListener('submit', async (e) => {
             createdAt: serverTimestamp()
         });
         
-        // Clear form
+        // Bersihkan form setelah sukses
         document.getElementById('amount').value = '';
         document.getElementById('category').value = '';
         document.getElementById('bankType').value = '';
