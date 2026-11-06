@@ -298,11 +298,14 @@ expenseForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const selectedDate = document.getElementById('expenseDate').value;
-    const amount = document.getElementById('amount').value;
+    const rawAmount = document.getElementById('amount').value;
     const category = document.getElementById('category').value;
     const bankType = document.getElementById('bankType').value;
     const note = document.getElementById('note').value;
     const monthStr = selectedDate.substring(0, 7);
+
+    // Otomatis mengalikan input dengan 1000 (misal: 10 menjadi 10000)
+    const finalAmount = Number(rawAmount) * 1000;
 
     submitBtn.innerHTML = 'Saving...';
     submitBtn.disabled = true;
@@ -312,7 +315,7 @@ expenseForm.addEventListener('submit', async (e) => {
             type: activeRecordType, 
             date: selectedDate,
             month: monthStr,
-            amount: Number(amount),
+            amount: finalAmount,
             category: category,
             bankType: bankType,
             note: note,
